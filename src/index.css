@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --animate-scan: scan 3s ease-in-out infinite;
+
+  @keyframes scan {
+    0%, 100% {
+      transform: translateY(-100%);
+    }
+    50% {
+      transform: translateY(300%);
+    }
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "PegMatch - Drink & Date India",
+  "description": "A social drinking and dating app for the Indian market where people can match, swipe, and plan meetups based on their favorite Indian alcohols and smokes.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

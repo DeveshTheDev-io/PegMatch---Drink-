@@ -1,0 +1,75 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "description": "User profiles, preferences, and statuses",
+      "fields": [
+        { "name": "uid", "type": "string" },
+        { "name": "displayName", "type": "string" },
+        { "name": "photoURL", "type": "string" },
+        { "name": "bio", "type": "string" },
+        { "name": "age", "type": "number" },
+        { "name": "gender", "type": "string" },
+        { "name": "alcoholPreferences", "type": "array" },
+        { "name": "smokePreferences", "type": "array" },
+        { "name": "availability", "type": "string" },
+        { "name": "safetyVerified", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "location", "type": "map" }
+      ]
+    },
+    {
+      "name": "swipes",
+      "description": "Record of user swipes (right = like, left = pass)",
+      "fields": [
+        { "name": "fromUserId", "type": "string" },
+        { "name": "toUserId", "type": "string" },
+        { "name": "action", "type": "string" },
+        { "name": "timestamp", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "matches",
+      "description": "Mutual likes resulting in a match",
+      "fields": [
+        { "name": "users", "type": "array" },
+        { "name": "timestamp", "type": "timestamp" },
+        { "name": "lastMessage", "type": "string" },
+        { "name": "lastMessageTimestamp", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "messages",
+      "description": "Chat messages within a match",
+      "fields": [
+        { "name": "matchId", "type": "string" },
+        { "name": "senderId", "type": "string" },
+        { "name": "text", "type": "string" },
+        { "name": "timestamp", "type": "timestamp" },
+        { "name": "type", "type": "string" }
+      ]
+    },
+    {
+      "name": "events",
+      "description": "Group happy hours",
+      "fields": [
+        { "name": "title", "type": "string" },
+        { "name": "description", "type": "string" },
+        { "name": "date", "type": "timestamp" },
+        { "name": "location", "type": "string" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "attendees", "type": "array" }
+      ]
+    },
+    {
+      "name": "reservations",
+      "description": "Venue reservations for dates or groups",
+      "fields": [
+        { "name": "users", "type": "array" },
+        { "name": "venueName", "type": "string" },
+        { "name": "date", "type": "timestamp" },
+        { "name": "status", "type": "string" }
+      ]
+    }
+  ]
+}
