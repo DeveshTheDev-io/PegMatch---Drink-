@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 @theme {
+  --color-bumble-yellow: #ffdb5b;
+  --color-bumble-yellow-hover: #ffc629;
+  --color-bumble-slate: #121214;
+  --color-bumble-dark-gray: #1a1a1e;
+  --color-bumble-light-gray: #2c2c35;
+  --color-brand-accent: #f59e0b;
+  
   --animate-scan: scan 3s ease-in-out infinite;
 
   @keyframes scan {
@@ -22,3 +29,4 @@
     display: none;
   }
 }
+

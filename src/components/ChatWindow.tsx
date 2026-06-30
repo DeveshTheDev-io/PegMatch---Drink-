@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { UserProfile } from "../types";
 import { ArrowLeft, Send, Sparkles, Loader2, Calendar, Bot } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { getSupabaseClient } from "../lib/supabase";
 import { DateModal } from "./DateModal";
 
 interface Props {
@@ -26,9 +25,24 @@ export function ChatWindow({ currentUser, matchUser, onBack }: Props) {
   useEffect(() => {
     const fetchProfile = async () => {
       if (currentUser) {
-        const userDocSnap = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDocSnap.exists()) {
-          setCurrentUserProfile(userDocSnap.data() as UserProfile);
+        const supabaseClient = getSupabaseClient();
+        const { data } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.uid || currentUser.id)
+          .maybeSingle();
+        if (data) {
+          setCurrentUserProfile({
+            ...data,
+            uid: data.id,
+            displayName: data.display_name,
+            photoURL: data.photo_url,
+            alcoholPreferences: data.alcohol_preferences,
+            smokePreferences: data.smoke_preferences,
+            safetyVerified: data.safety_verified,
+            musicVibes: data.music_vibes,
+            preferredPlaces: data.preferred_places
+          } as UserProfile);
         }
       }
     };

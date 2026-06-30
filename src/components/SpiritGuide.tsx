@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { UserProfile } from "../types";
-import { db } from "../lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { getSupabaseClient } from "../lib/supabase";
 import { X, Check, Sparkles, Flame, Droplets } from "lucide-react";
 
 interface Spirit {
@@ -74,12 +73,18 @@ export function SpiritGuide({ currentUser, onClose, onUpdate }: Props) {
   const [preferences, setPreferences] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const supabaseClient = getSupabaseClient();
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (currentUser) {
-        const docSnap = await getDoc(doc(db, "users", currentUser.uid));
-        if (docSnap.exists()) {
-          setPreferences(docSnap.data().alcoholPreferences || []);
+        const { data } = await supabaseClient
+          .from("profiles")
+          .select("alcohol_preferences")
+          .eq("id", currentUser.uid || currentUser.id)
+          .maybeSingle();
+        if (data) {
+          setPreferences(data.alcohol_preferences || []);
         }
       }
       setLoading(false);
@@ -96,36 +101,35 @@ export function SpiritGuide({ currentUser, onClose, onUpdate }: Props) {
     onUpdate(updated);
 
     if (currentUser) {
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        alcoholPreferences: updated
-      });
+      await supabaseClient
+        .from("profiles")
+        .update({ alcohol_preferences: updated })
+        .eq("id", currentUser.uid || currentUser.id);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0A0A0C] flex flex-col pt-12 pb-8 px-6 overflow-y-auto">
-      <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] bg-amber-900/20 rounded-full blur-[120px] pointer-events-none" />
-      
+    <div className="fixed inset-0 z-50 bg-bumble-slate flex flex-col pt-12 pb-8 px-6 overflow-y-auto">
       <div className="flex justify-between items-center mb-8 relative z-10">
         <div>
           <h2 className="text-3xl font-black text-white flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-amber-500" />
-            Spirit Guide
+            <Sparkles className="w-6 h-6 text-bumble-yellow" />
+            Desi Spirit Guide
           </h2>
-          <p className="text-slate-400 text-sm mt-1">Discover trending Indian crafts & add to your vibe</p>
+          <p className="text-slate-400 text-sm mt-1">Discover trending Indian crafts & select your vibe</p>
         </div>
         <button 
           onClick={onClose}
-          className="p-3 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white transition-colors shrink-0"
+          className="p-3 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white transition-colors shrink-0 cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="relative z-10 space-y-4 pb-20">
+      <div className="relative z-10 space-y-4 pb-20 max-w-xl mx-auto w-full">
         {loading ? (
           <div className="flex justify-center p-12">
-            <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-bumble-yellow border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           TRENDING_SPIRITS.map((spirit) => {
@@ -134,29 +138,29 @@ export function SpiritGuide({ currentUser, onClose, onUpdate }: Props) {
             return (
               <div 
                 key={spirit.id} 
-                className={`p-5 rounded-3xl border transition-all cursor-pointer ${
+                className={`p-5 rounded-[24px] border transition-all cursor-pointer ${
                   isSelected 
-                    ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
+                    ? 'bg-bumble-yellow/10 border-bumble-yellow/50 shadow-[0_0_30px_rgba(255,219,91,0.1)]' 
                     : 'bg-white/5 border-white/10 hover:bg-white/10'
                 }`}
-                onClick={() => toggleSpirit(spirit.tags[0])} // Add the primary tag to preferences
+                onClick={() => toggleSpirit(spirit.tags[0])}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1 block">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-bumble-yellow mb-1 block">
                       {spirit.category}
                     </span>
                     <h3 className="text-xl font-black text-white">{spirit.name}</h3>
                   </div>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 ${
-                    isSelected ? 'bg-amber-500 border-amber-500 text-black' : 'border-white/20 text-transparent'
+                    isSelected ? 'bg-bumble-yellow border-bumble-yellow text-slate-950' : 'border-white/20 text-transparent'
                   }`}>
                     <Check className="w-5 h-5" strokeWidth={3} />
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2 mb-3">
-                  <Flame className="w-4 h-4 text-orange-500" />
+                  <Flame className="w-4 h-4 text-bumble-yellow" />
                   <span className="text-sm font-bold text-slate-300">{spirit.profile}</span>
                 </div>
                 
@@ -166,7 +170,7 @@ export function SpiritGuide({ currentUser, onClose, onUpdate }: Props) {
                 
                 <div className="flex flex-wrap gap-2">
                   {spirit.tags.map(tag => (
-                    <span key={tag} className="px-2 py-1 bg-black/40 border border-white/10 rounded text-[10px] font-bold text-slate-400">
+                    <span key={tag} className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-full text-[10px] font-bold text-slate-400">
                       {tag}
                     </span>
                   ))}
@@ -179,3 +183,4 @@ export function SpiritGuide({ currentUser, onClose, onUpdate }: Props) {
     </div>
   );
 }
+

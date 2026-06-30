@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { User } from "firebase/auth";
-import { db } from "../lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { INDIAN_ALCOHOLS, SMOKE_PREFS, UserProfile } from "../types";
+import { getSupabaseClient } from "../lib/supabase";
+import { INDIAN_ALCOHOLS, SMOKE_PREFS, MUSIC_VIBES, PREFERRED_PLACES, UserProfile } from "../types";
 import { CheckCircle2, ChevronRight, ShieldCheck, GlassWater } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Props {
-  user: User;
+  user: any;
   onComplete: () => void;
 }
 
@@ -15,7 +13,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<Partial<UserProfile>>({
-    uid: user.uid,
+    uid: user.uid || (user as any).id,
     displayName: user.displayName || "",
     photoURL: user.photoURL || "",
     bio: "",
@@ -25,13 +23,21 @@ export function ProfileSetup({ user, onComplete }: Props) {
     smokePreferences: [],
     availability: "Available",
     safetyVerified: false,
+    vibes: [],
+    musicVibes: [],
+    preferredPlaces: [],
   });
+
+  const supabaseClient = getSupabaseClient();
 
   useEffect(() => {
     const checkProfile = async () => {
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      const { data } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.uid || (user as any).id)
+        .maybeSingle();
+      if (data && data.display_name) {
         onComplete();
       } else {
         setLoading(false);
@@ -42,20 +48,37 @@ export function ProfileSetup({ user, onComplete }: Props) {
 
   const handleSave = async () => {
     try {
-      const fullProfile = {
-        ...profile,
-        createdAt: Date.now(),
-      } as UserProfile;
-      await setDoc(doc(db, "users", user.uid), fullProfile);
+      const dbProfile = {
+        id: user.uid || (user as any).id,
+        display_name: profile.displayName || "",
+        photo_url: profile.photoURL || "",
+        bio: profile.bio || "",
+        age: profile.age || 21,
+        gender: profile.gender || "Other",
+        availability: profile.availability || "Available",
+        safety_verified: profile.safetyVerified || false,
+        alcohol_preferences: profile.alcoholPreferences || [],
+        smoke_preferences: profile.smokePreferences || [],
+        music_vibes: profile.musicVibes || [],
+        preferred_places: profile.preferredPlaces || [],
+        vibes: profile.vibes || []
+      };
+      
+      await supabaseClient.from("profiles").upsert(dbProfile);
       onComplete();
     } catch (error) {
       console.error("Error saving profile", error);
     }
   };
 
-  const togglePref = (type: "alcohol" | "smoke", item: string) => {
+  const togglePref = (type: "alcohol" | "smoke" | "music" | "places", item: string) => {
     setProfile((prev) => {
-      const key = type === "alcohol" ? "alcoholPreferences" : "smokePreferences";
+      let key: "alcoholPreferences" | "smokePreferences" | "musicVibes" | "preferredPlaces";
+      if (type === "alcohol") key = "alcoholPreferences";
+      else if (type === "smoke") key = "smokePreferences";
+      else if (type === "music") key = "musicVibes";
+      else key = "preferredPlaces";
+
       const list = prev[key] || [];
       return {
         ...prev,
@@ -65,17 +88,15 @@ export function ProfileSetup({ user, onComplete }: Props) {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white"><GlassWater className="w-8 h-8 animate-pulse text-amber-500" /></div>;
+    return <div className="min-h-screen bg-bumble-slate flex items-center justify-center text-white"><GlassWater className="w-8 h-8 animate-pulse text-bumble-yellow" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0C] text-slate-100 flex flex-col px-6 py-12 overflow-y-auto font-sans relative">
-      <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] bg-amber-900/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-bumble-slate text-slate-100 flex flex-col px-6 py-12 overflow-y-auto font-sans relative">
       <div className="max-w-md w-full mx-auto space-y-8 relative z-10">
         {step === 1 && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <h2 className="text-3xl font-black">Basic Details</h2>
+            <h2 className="text-3xl font-black text-white">Basic Details</h2>
             
             <div className="space-y-4">
               <div>
@@ -84,7 +105,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
                   type="text" 
                   value={profile.displayName}
                   onChange={(e) => setProfile({...profile, displayName: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 text-slate-100"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus:outline-none focus:border-bumble-yellow text-slate-100"
                 />
               </div>
               <div>
@@ -94,7 +115,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
                   value={profile.age}
                   min={21}
                   onChange={(e) => setProfile({...profile, age: parseInt(e.target.value) || 21})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 text-slate-100"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus:outline-none focus:border-bumble-yellow text-slate-100"
                 />
               </div>
               <div>
@@ -102,12 +123,12 @@ export function ProfileSetup({ user, onComplete }: Props) {
                 <select 
                   value={profile.gender}
                   onChange={(e) => setProfile({...profile, gender: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 text-slate-100"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus:outline-none focus:border-bumble-yellow text-slate-100"
                 >
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Non-binary</option>
-                  <option>Other</option>
+                  <option className="bg-bumble-slate text-white">Male</option>
+                  <option className="bg-bumble-slate text-white">Female</option>
+                  <option className="bg-bumble-slate text-white">Non-binary</option>
+                  <option className="bg-bumble-slate text-white">Other</option>
                 </select>
               </div>
               <div>
@@ -116,14 +137,14 @@ export function ProfileSetup({ user, onComplete }: Props) {
                   value={profile.bio}
                   placeholder="What's your perfect evening look like?"
                   onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 h-24 resize-none focus:outline-none focus:border-amber-500 text-slate-100"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 h-24 resize-none focus:outline-none focus:border-bumble-yellow text-slate-100"
                 />
               </div>
             </div>
 
             <button 
               onClick={() => setStep(2)}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30 uppercase tracking-widest"
+              className="w-full bg-bumble-yellow hover:bg-bumble-yellow-hover text-slate-950 font-black py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 uppercase tracking-wider cursor-pointer"
             >
               Next <ChevronRight className="w-5 h-5" />
             </button>
@@ -132,7 +153,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
 
         {step === 2 && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <h2 className="text-3xl font-black">Your Vibe</h2>
+            <h2 className="text-3xl font-black text-white">Your Vibe</h2>
             
             <div className="space-y-6">
               <div>
@@ -144,9 +165,45 @@ export function ProfileSetup({ user, onComplete }: Props) {
                       <button
                         key={drink}
                         onClick={() => togglePref("alcohol", drink)}
-                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors border ${selected ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-white/5 border-white/10 text-slate-300'}`}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border cursor-pointer ${selected ? 'bg-bumble-yellow/20 border-bumble-yellow/50 text-bumble-yellow' : 'bg-white/5 border-white/10 text-slate-300'}`}
                       >
                         {drink}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-[11px] text-slate-400 uppercase font-bold mb-3 block">Favorite Drinking Music Vibe</h3>
+                <div className="flex flex-wrap gap-2">
+                  {MUSIC_VIBES.map(vibe => {
+                    const selected = profile.musicVibes?.includes(vibe);
+                    return (
+                      <button
+                        key={vibe}
+                        onClick={() => togglePref("music", vibe)}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border cursor-pointer ${selected ? 'bg-bumble-yellow/20 border-bumble-yellow/50 text-bumble-yellow' : 'bg-white/5 border-white/10 text-slate-300'}`}
+                      >
+                        {vibe}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-[11px] text-slate-400 uppercase font-bold mb-3 block">Preferred Drinking Location</h3>
+                <div className="flex flex-wrap gap-2">
+                  {PREFERRED_PLACES.map(place => {
+                    const selected = profile.preferredPlaces?.includes(place);
+                    return (
+                      <button
+                        key={place}
+                        onClick={() => togglePref("places", place)}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border cursor-pointer ${selected ? 'bg-bumble-yellow/20 border-bumble-yellow/50 text-bumble-yellow' : 'bg-white/5 border-white/10 text-slate-300'}`}
+                      >
+                        {place}
                       </button>
                     )
                   })}
@@ -169,7 +226,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
                             setProfile({ ...profile, vibes: [...current, vibe] });
                           }
                         }}
-                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors border ${selected ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-slate-300'}`}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border cursor-pointer ${selected ? 'bg-bumble-yellow/20 border-bumble-yellow/50 text-bumble-yellow' : 'bg-white/5 border-white/10 text-slate-300'}`}
                       >
                         {vibe}
                       </button>
@@ -187,7 +244,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
                       <button
                         key={smoke}
                         onClick={() => togglePref("smoke", smoke)}
-                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors border ${selected ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-slate-300'}`}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border cursor-pointer ${selected ? 'bg-bumble-yellow/20 border-bumble-yellow/50 text-bumble-yellow' : 'bg-white/5 border-white/10 text-slate-300'}`}
                       >
                         {smoke}
                       </button>
@@ -196,7 +253,7 @@ export function ProfileSetup({ user, onComplete }: Props) {
                 </div>
               </div>
               
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-start gap-4">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-start gap-4">
                 <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-emerald-400 text-sm">Safety Verification</h4>
@@ -208,15 +265,15 @@ export function ProfileSetup({ user, onComplete }: Props) {
             <div className="flex gap-4">
               <button 
                 onClick={() => setStep(1)}
-                className="w-1/3 bg-white/5 border border-white/10 text-slate-300 font-bold py-4 rounded-xl text-sm"
+                className="w-1/3 bg-white/5 border border-white/10 text-slate-300 font-bold py-4 rounded-full text-sm cursor-pointer"
               >
                 Back
               </button>
               <button 
                 onClick={handleSave}
-                className="w-2/3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-orange-600/30 uppercase tracking-widest text-sm"
+                className="w-2/3 bg-bumble-yellow hover:bg-bumble-yellow-hover text-slate-950 font-black py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 uppercase tracking-wider text-sm cursor-pointer"
               >
-                Complete Profile <CheckCircle2 className="w-5 h-5" />
+                Complete <CheckCircle2 className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
@@ -225,3 +282,5 @@ export function ProfileSetup({ user, onComplete }: Props) {
     </div>
   );
 }
+
+

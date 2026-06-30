@@ -11,6 +11,11 @@ export interface UserProfile {
   safetyVerified: boolean;
   createdAt: number;
   vibes?: string[];
+  musicVibes?: string[];
+  preferredPlaces?: string[];
+  aadharNumber?: string;
+  aadharURL?: string;
+  verificationStatus?: "unverified" | "pending" | "verified" | "rejected";
 }
 
 export const INDIAN_ALCOHOLS = [
@@ -39,3 +44,22 @@ export const SMOKE_PREFS = [
   "Non-smoker",
   "Social smoker"
 ];
+
+export const MUSIC_VIBES = [
+  "Punjabi Beats",
+  "Sufi / Ghazals",
+  "Bollywood Retro & Sad Songs",
+  "EDM / Techno Clubbing",
+  "Indie / Rock Vibe",
+  "Silent Acoustic / Unplugged"
+];
+
+export const PREFERRED_PLACES = [
+  "BYOB / Ahata",
+  "Flat / Home Party",
+  "Club / Elite Lounge",
+  "Local Dhaba / Highway",
+  "Rooftop / Cafe Vibe",
+  "Park / Outdoors (Chull)"
+];
+
