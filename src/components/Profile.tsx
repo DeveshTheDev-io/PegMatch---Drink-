@@ -7,6 +7,7 @@ import { VerificationScreen } from "./VerificationScreen";
 import { SpiritGuide } from "./SpiritGuide";
 import { RadarComparisonWidget } from "./RadarComparisonWidget";
 import { FoodPairingsWidget } from "./FoodPairingsWidget";
+import { SubscriptionModal } from "./SubscriptionModal";
 import { motion } from "motion/react";
 
 interface Props {
@@ -18,6 +19,7 @@ export function Profile({ currentUser }: Props) {
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 
   // Form states for editing
   const [editName, setEditName] = useState("");
@@ -50,7 +52,8 @@ export function Profile({ currentUser }: Props) {
         safetyVerified: data.safety_verified,
         musicVibes: data.music_vibes,
         preferredPlaces: data.preferred_places,
-        verificationStatus: data.verification_status || "unverified"
+        verificationStatus: data.verification_status || "unverified",
+        subscriptionTier: data.subscription_tier || "free"
       } as UserProfile;
       setProfile(mapped);
 
@@ -221,6 +224,17 @@ export function Profile({ currentUser }: Props) {
           }`}>
             Aadhar: {verifStatus}
           </div>
+
+          <button 
+            onClick={() => setSubscriptionOpen(true)}
+            className={`px-4 py-2 rounded-full border text-[10px] uppercase font-black tracking-widest cursor-pointer hover:scale-105 transition-transform ${
+              profile.subscriptionTier === "ultimate" ? "bg-amber-500/15 border-amber-500/30 text-amber-400" :
+              profile.subscriptionTier === "intermediate" ? "bg-bumble-yellow/15 border-bumble-yellow/30 text-bumble-yellow" :
+              "bg-white/5 border-white/10 text-slate-400"
+            }`}
+          >
+            Pass: {profile.subscriptionTier || "free"}
+          </button>
         </div>
       </motion.div>
 
@@ -489,6 +503,18 @@ export function Profile({ currentUser }: Props) {
           currentUser={currentUser} 
           onClose={() => setGuideOpen(false)} 
           onUpdate={(prefs) => setProfile(prev => prev ? { ...prev, alcoholPreferences: prefs } : null)}
+        />
+      )}
+
+      {subscriptionOpen && (
+        <SubscriptionModal 
+          currentUser={currentUser}
+          currentTier={profile.subscriptionTier || "free"}
+          onClose={() => setSubscriptionOpen(false)}
+          onSuccess={() => {
+            setSubscriptionOpen(false);
+            fetchProfile();
+          }}
         />
       )}
     </div>

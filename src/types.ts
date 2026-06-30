@@ -16,6 +16,8 @@ export interface UserProfile {
   aadharNumber?: string;
   aadharURL?: string;
   verificationStatus?: "unverified" | "pending" | "verified" | "rejected";
+  subscriptionTier?: "free" | "intermediate" | "ultimate";
+  swipesRemaining?: number;
 }
 
 export const INDIAN_ALCOHOLS = [

@@ -86,7 +86,9 @@ export function Discover({ currentUser }: Props) {
             safetyVerified: profile.safety_verified,
             musicVibes: profile.music_vibes,
             preferredPlaces: profile.preferred_places,
-            verificationStatus: profile.verification_status || "unverified"
+            verificationStatus: profile.verification_status || "unverified",
+            subscriptionTier: profile.subscription_tier || "free",
+            swipesRemaining: profile.swipes_remaining !== undefined ? profile.swipes_remaining : 3
           };
           setCurrentUserProfile(mappedProfile as UserProfile);
         }
@@ -142,6 +144,16 @@ export function Discover({ currentUser }: Props) {
         to_user_id: targetUid,
         action: direction === "right" ? "like" : "pass"
       });
+
+      // Decrement swipes
+      if (currentUserProfile && currentUserProfile.subscriptionTier === "free") {
+        const nextSwipes = Math.max(0, (currentUserProfile.swipesRemaining || 3) - 1);
+        setCurrentUserProfile(prev => prev ? { ...prev, swipesRemaining: nextSwipes } : null);
+        await supabaseClient
+          .from("profiles")
+          .update({ swipes_remaining: nextSwipes })
+          .eq("id", currentUser.uid || currentUser.id);
+      }
     } catch (error) {
       console.error("Error saving swipe", error);
     }
@@ -157,6 +169,9 @@ export function Discover({ currentUser }: Props) {
 
   // Verification gating check
   const isVerified = currentUserProfile?.verificationStatus === "verified";
+  const hasSwipes = currentUserProfile && 
+    (currentUserProfile.subscriptionTier !== "free" || 
+     (currentUserProfile.swipesRemaining !== undefined ? currentUserProfile.swipesRemaining > 0 : true));
 
   if (currentUserProfile && !isVerified) {
     const status = currentUserProfile.verificationStatus || "unverified";
@@ -178,6 +193,23 @@ export function Discover({ currentUser }: Props) {
             Go to Profile &rarr; Submit Aadhar Card
           </p>
         )}
+      </div>
+    );
+  }
+
+  if (currentUserProfile && !hasSwipes) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-20 px-6 max-w-sm mx-auto relative z-20">
+        <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-500/20">
+          <Zap className="w-10 h-10 text-amber-500 fill-amber-500/20 animate-pulse" />
+        </div>
+        <h3 className="text-2xl font-black mb-2 text-white">Out of Free Swipes 🥂</h3>
+        <p className="text-slate-400 text-xs leading-relaxed mb-6">
+          You've exhausted your 3 free passes for the day. Upgrade to the **Chilled Quarter** or **Patiala Peg VIP Pass** in your Profile tab to unlock more matches instantly!
+        </p>
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+          Go to Profile &rarr; Upgrade Lounge Pass
+        </p>
       </div>
     );
   }
